@@ -4,7 +4,7 @@ bcrypt=require("bcryptjs"), jwt=require("jsonwebtoken"), cookieParser=require("c
 multer=require("multer"), path=require("path"), fs=require("fs");
 
 const app=express(), PORT=process.env.PORT||3000;
-const SUPA_URL=(process.env.SUPABASE_URL||"").trim().replace(/\/$/,""), SUPA_KEY=(process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SECRET_KEY||"").trim();
+const SUPA_URL=(process.env.SUPABASE_URL||"").replace(/\/$/,""), SUPA_KEY=process.env.SUPABASE_SERVICE_ROLE_KEY||"";
 const JWT_SECRET=process.env.JWT_SECRET||"CHANGE_ME";
 const STORE_WHATSAPP=(process.env.STORE_WHATSAPP||"919019899943").replace(/\D/g,"");
 const WA_TOKEN=process.env.META_WA_TOKEN||"", WA_PHONE_ID=process.env.META_WA_PHONE_ID||"", WA_VER=process.env.META_WA_API_VERSION||"v23.0";
@@ -23,7 +23,7 @@ async function insert(table,row){return sb(table,{method:"POST",headers:{"Prefer
 async function update(table,query,row){return sb(`${table}?${query}`,{method:"PATCH",headers:{"Prefer":"return=representation"},body:JSON.stringify(row)})}
 async function remove(table,query){return sb(`${table}?${query}`,{method:"DELETE",headers:{"Prefer":"return=representation"}})}
 async function storageUpload(file){
- if(!SUPA_URL||!SUPA_KEY) throw new Error("Supabase is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) in Render Environment.");
+ if(!SUPA_URL||!SUPA_KEY) throw new Error("Supabase is not configured");
  const bucket=process.env.SUPABASE_BUCKET||"product-images";
  const p=`${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname).toLowerCase()}`;
  const buf=fs.readFileSync(file.path);
