@@ -68,7 +68,21 @@ function clean(body){const price=Number(body.price),old=Number(body.oldPrice||bo
 function orderText(o){return `🛍️ NEW MYSTORE ORDER\nOrder ID: ${o.id}\nCustomer: ${o.name}\nPhone: ${o.phone}\nAddress: ${o.address}, ${o.city} - ${o.pin}\nItems:\n${o.items.map(x=>`• ${x.name} × ${x.qty} = ₹${x.price*x.qty}`).join("\n")}\nTotal: ₹${o.total}\nPayment: ${o.payment}\nStatus: ${o.status}`}
 async function metaWA(to,text){if(!WA_TOKEN||!WA_PHONE_ID)return {sent:false,reason:"Meta WhatsApp API not configured"};const r=await fetch(`https://graph.facebook.com/${WA_VER}/${WA_PHONE_ID}/messages`,{method:"POST",headers:{Authorization:`Bearer ${WA_TOKEN}`,"Content-Type":"application/json"},body:JSON.stringify({messaging_product:"whatsapp",to,type:"text",text:{body:text}})});return {sent:r.ok,data:await r.json()}} 
 
-app.post("/api/admin/login",loginLimit,async(req,res)=>{try{const a=await one("admin_settings","id=eq.1&select=password_hash"),ok=a&&await bcrypt.compare(String(req.body.password||""),a.password_hash);if(!ok)return res.status(401).json({error:"Invalid password"});const token=jwt.sign({role:"admin"},JWT_SECRET,{expiresIn:"8h"});res.cookie("admin_session",token,{httpOnly:true,sameSite:"strict",secure:process.env.NODE_ENV==="production",maxAge:8*3600000});res.json({ok:true})}catch(e){res.status(500).json({error:e.message})}});
+app.post("/api/admin/login",loginLimit,async(req,res)=>{try{
+ const password=String(req.body.password||"");
+ let ok=false;
+ // Normal path: authenticate against the permanent Supabase admin record.
+ if(SUPA_URL&&SUPA_KEY){
+  try{const a=await one("admin_settings","id=eq.1&select=password_hash");if(a) ok=await bcrypt.compare(password,a.password_hash);}
+  catch(e){console.warn("Admin DB login unavailable; using Render ADMIN_PASSWORD fallback.",e.message);}
+ }
+ // Fallback only for the login itself. Product/order data remains in Supabase.
+ // This prevents a Supabase URL/key configuration problem from blocking the Admin panel login.
+ if(!ok){const envPassword=process.env.ADMIN_PASSWORD||"";if(envPassword) ok= password===envPassword;}
+ if(!ok)return res.status(401).json({error:"Invalid password"});
+ const token=jwt.sign({role:"admin"},JWT_SECRET,{expiresIn:"8h"});
+ res.cookie("admin_session",token,{httpOnly:true,sameSite:"strict",secure:process.env.NODE_ENV==="production",maxAge:8*3600000});res.json({ok:true})
+}catch(e){res.status(500).json({error:e.message})}});
 app.post("/api/admin/logout",(q,s)=>{s.clearCookie("admin_session");s.json({ok:true})});
 app.get("/api/admin/me",auth,(q,s)=>s.json({ok:true}));
 app.post("/api/admin/change-password",auth,async(req,res)=>{try{const cur=String(req.body.currentPassword||""),next=String(req.body.newPassword||"");if(next.length<8)return res.status(400).json({error:"New password must be at least 8 characters"});const a=await one("admin_settings","id=eq.1&select=password_hash");if(!a||!(await bcrypt.compare(cur,a.password_hash)))return res.status(401).json({error:"Current password is incorrect"});await update("admin_settings","id=eq.1",{password_hash:await bcrypt.hash(next,12),updated_at:new Date().toISOString()});res.json({ok:true})}catch(e){res.status(500).json({error:e.message})}});

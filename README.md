@@ -13,6 +13,9 @@ This version stores products, stock, coupons, orders and the admin password in S
 8. Deploy. Render supplies the public `onrender.com` URL.
 9. Open it in Chrome → Admin.
 
+## Admin login fallback
+If Supabase is temporarily unavailable or its URL/key is misconfigured, Admin Login can authenticate with the Render `ADMIN_PASSWORD` environment variable. Product, stock, coupon and order data continue to use Supabase.
+
 ## Change password
 Admin → Admin Password → enter current password and new password (8+ characters) → Save. The new password is bcrypt-hashed and stored in Supabase.
 
