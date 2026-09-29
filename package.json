@@ -1,0 +1,22 @@
+{
+  "name": "mystore-supabase-online",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Deployable MyStore ecommerce website with admin, stock, coupons, tracking and optional Meta WhatsApp notifications",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2"
+  }
+}
